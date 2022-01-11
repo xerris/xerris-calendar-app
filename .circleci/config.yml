@@ -42,7 +42,7 @@ jobs:
       - *load-dependency-cache
       - *configure-build-environment
       - *cache-dependencies
-      - *run-tests
+      # - *run-tests
   build:
     executor: default
     steps:
