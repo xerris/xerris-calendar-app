@@ -16,7 +16,7 @@ export default function Root(props) {
   }
   const mockEvents = [
     {
-      title: "vacation",
+      title: "OOO - Someone",
       start: new Date(),
       end: new Date(),
       allDay: true,
@@ -40,19 +40,20 @@ export default function Root(props) {
         // position: "absolute",
         // left: "40%",
         // top: "10%",
+        marginTop: -2,
         marginLeft: 73,
-        marginTop: 5,
         paddingLeft: 5,
         paddingRight: 5,
       }}
     >
+      <p>{props.pageLabel}</p>
       {/* <Calendar onChange={setValue} value={value} /> */}
       <Calendar
         localizer={localizer}
         events={mockEvents}
         startAccessor="start"
         endAccessor="end"
-        style={{ height: "99vh" }}
+        style={{ height: "98vh" }}
       />
     </div>
   );

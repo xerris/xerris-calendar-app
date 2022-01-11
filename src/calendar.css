@@ -48,6 +48,11 @@ button.rbc-active {
 .rbc-date-cell.rbc-now.rbc-current a {
   color: white !important;
 }
+
+.rbc-header {
+  background-color: #2e465d;
+  color: white;
+}
 /* .rbc-toolbar {
   display: flex;
   flex-wrap: wrap;
