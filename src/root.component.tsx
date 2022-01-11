@@ -46,6 +46,7 @@ export default function Root(props) {
         paddingRight: 5,
       }}
     >
+      <p>{props.pageLabel}</p>
       {/* <Calendar onChange={setValue} value={value} /> */}
       <Calendar
         localizer={localizer}
