@@ -45,16 +45,12 @@ button.rbc-active {
 }
 
 .rbc-event.rbc-selected:focus {
-  outline-color: white;
+  outline-color: #a2e247;
   outline-offset: -2px;
 }
 .rbc-event:active {
-  outline-color: white;
+  outline-color: #a2e247;
   outline-offset: -2px;
-}
-
-.rbc-selected {
-  background-color: #8dc53f;
 }
 
 .rbc-date-cell a {
@@ -75,4 +71,24 @@ button.rbc-active {
 .rbc-header {
   background-color: #2e465d;
   color: white;
+}
+
+.rbc-label {
+  color: #2e465d;
+}
+
+.rbc-agenda-date-cell {
+  color: #2e465d;
+}
+
+.rbc-agenda-time-cell {
+  color: #696969;
+}
+
+.rbc-agenda-event-cell {
+  color: #696969;
+}
+
+.rbc-now.rbc-today {
+  background-color: #eeffd9;
 }
