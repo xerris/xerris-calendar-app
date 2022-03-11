@@ -9,6 +9,8 @@ module.exports = (webpackConfigEnv, argv) => {
     argv,
   });
 
+  defaultConfig.externals = ["single-spa", "react", "react-dom"];
+
   return merge(defaultConfig, {
     // modify the webpack config however you'd like to by adding to this object
     externals: ["@xerris/utility-app"],
