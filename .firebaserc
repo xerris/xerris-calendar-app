@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "xerris-dashboard-5d23c"
+  },
+  "targets": {
+    "xerris-dashboard-5d23c": {
+      "hosting": {
+        "xerris-calendar-app": [
+          "xerris-calendar-app"
+        ]
+      }
+    }
+  }
+}

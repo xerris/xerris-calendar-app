@@ -1,7 +1,6 @@
-import { useAuth } from "@xerris/utility-app";
+import { useAuth, useGet } from "@xerris/utility-app";
 import { useState } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
-// import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar.css";
 import moment from "moment";

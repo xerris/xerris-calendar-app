@@ -40,4 +40,5 @@ declare module "*.svg" {
 
 declare module "@xerris/utility-app" {
   export const useAuth: () => string;
+  export const useGet: (url: string, config?: any) => any;
 }
