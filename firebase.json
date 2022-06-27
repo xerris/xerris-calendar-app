@@ -11,6 +11,15 @@
             "value": "https://xerris-dashboard-5d23c.web.app"
           }
         ]
+      },
+      {
+        "source": "/calendar-prod",
+        "headers": [
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "https://xerris-dashboard-prod.web.app"
+          }
+        ]
       }
     ],
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
