@@ -26,6 +26,7 @@ anchors:
     run:
       name: deploy
       command: |
+        ./node_modules/.bin/firebase use default
         ./node_modules/.bin/firebase deploy --only hosting --token=$FIREBASE_TOKEN --non-interactive
   run-prod-deploy: &run-prod-deploy
     run:
