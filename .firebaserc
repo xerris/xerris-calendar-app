@@ -1,12 +1,20 @@
 {
   "projects": {
-    "default": "xerris-dashboard-5d23c"
+    "default": "xerris-dashboard-5d23c",
+    "production": "xerris-dashboard-prod"
   },
   "targets": {
     "xerris-dashboard-5d23c": {
       "hosting": {
         "xerris-calendar-app": [
           "xerris-calendar-app"
+        ]
+      }
+    },
+    "xerris-dashboard-prod": {
+      "hosting": {
+        "xerris-calendar-app": [
+          "xerris-calendar-app-prod"
         ]
       }
     }
