@@ -66,5 +66,5 @@
     "single-spa-react": "^4.3.1"
   },
   "types": "dist/xerris-calendar-app.d.ts",
-  "version": "0.0.1"
+  "version": "0.0.2"
 }
