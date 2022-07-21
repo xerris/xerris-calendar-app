@@ -41,7 +41,7 @@ button.rbc-active {
 .rbc-event {
   background-color: #8dc53f !important;
   border-color: #4d9a0f !important;
-  border: 0.5 solid;
+  border: 0.5px solid;
 }
 
 .rbc-event.rbc-selected:focus {
@@ -62,10 +62,15 @@ button.rbc-active {
 }
 .rbc-day-bg.rbc-today {
   background-color: #2e465d;
+  color: white;
 }
 
 .rbc-date-cell.rbc-now.rbc-current a {
   color: white !important;
+}
+
+.rbc-date-cell.rbc-now a {
+  color: white;
 }
 
 .rbc-header {
@@ -90,5 +95,16 @@ button.rbc-active {
 }
 
 .rbc-now.rbc-today {
-  background-color: #eeffd9;
+  background-color: white;
+}
+
+.rbc-show-more {
+  color: #4d9a0f;
+  background-color: transparent;
+  margin-top: 5px;
+  padding: 5px;
+}
+
+.rbc-date-cell.rbc-now {
+  color: #eeffd9;
 }
