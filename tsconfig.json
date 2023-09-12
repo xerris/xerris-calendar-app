@@ -4,7 +4,7 @@
     "jsx": "react-jsx",
     "declarationDir": "dist"
   },
-  "files": ["src/xerris-calendar-app.tsx"],
+  "files": ["src/xerris-calendar-app.ts"],
   "include": ["src/**/*"],
   "exclude": ["src/**/*.test*"]
 }
