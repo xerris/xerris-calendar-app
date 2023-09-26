@@ -11,6 +11,7 @@ export default defineConfig({
       input: "src/xerris-calendar-app.ts",
       output: {
         format: "systemjs",
+        entryFileNames: "[name].js",
       },
     },
   },
