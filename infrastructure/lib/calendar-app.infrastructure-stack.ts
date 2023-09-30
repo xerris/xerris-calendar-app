@@ -3,13 +3,20 @@ import {
   aws_s3 as s3,
   aws_cloudfront as cloudFront,
   aws_s3_deployment as s3deploy,
-  aws_certificatemanager as acm,
+  aws_iam as iam,
+  RemovalPolicy,
 } from "aws-cdk-lib";
 import { S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 import { Configuration } from "./configuration";
+import { CorsRule } from "aws-cdk-lib/aws-s3";
 
 const ACCOLITE_RESOURCE_NAME = "acc-can-calendar-app";
+const CORS_RULE: CorsRule = {
+  allowedOrigins: ["*"],
+  allowedMethods: [...Object.values(s3.HttpMethods)],
+  allowedHeaders: ["*"],
+};
 
 export class CalendarAppInfrastructureStack extends cdk.Stack {
   config: Configuration;
@@ -18,55 +25,69 @@ export class CalendarAppInfrastructureStack extends cdk.Stack {
     super(scope, id, { env: config.env });
     this.config = config;
 
-    // make s3 bucket
-    const s3Site = new s3.Bucket(
+    const calendarAppBucket = new s3.Bucket(
       this,
-      `${ACCOLITE_RESOURCE_NAME}-s3site-${this.config.stageName}`,
+      `${ACCOLITE_RESOURCE_NAME}-s3-bucket-${this.config.stageName}`,
       {
+        versioned: true,
         bucketName: `${ACCOLITE_RESOURCE_NAME}-${this.config.stageName}`,
-        publicReadAccess: true,
-        websiteIndexDocument: "xerris-calendar-app.js",
-        websiteErrorDocument: "xerris-calendar-app.js",
+        publicReadAccess: false,
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        removalPolicy: RemovalPolicy.DESTROY,
       }
     );
 
-    // NOTE: Commented out till we get a domain
-    // const certificate = acm.Certificate.fromCertificateArn(
-    //   this,
-    //   "Certificate",
-    //   this.config.certificateArn
-    // );
+    calendarAppBucket.addCorsRule(CORS_RULE);
 
-    const distribution = new cloudFront.Distribution(
+    const cloudFrontOAI = new cloudFront.OriginAccessIdentity(
+      this,
+      `${ACCOLITE_RESOURCE_NAME}-cloudfront-OAI-${this.config.stageName}`
+    );
+
+    calendarAppBucket.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:GetObject"],
+        resources: [calendarAppBucket.arnForObjects("*")],
+        principals: [
+          new iam.CanonicalUserPrincipal(
+            cloudFrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId
+          ),
+        ],
+      })
+    );
+
+    const calendarAppCDN = new cloudFront.Distribution(
       this,
       `${ACCOLITE_RESOURCE_NAME}-cf-distribution-${this.config.stageName}`,
       {
+        defaultRootObject: "xerris-calendar-app.js",
         defaultBehavior: {
-          origin: new S3Origin(s3Site),
+          origin: new S3Origin(calendarAppBucket, {
+            // give cloudfront permission to access s3 bucket
+            originAccessIdentity: cloudFrontOAI,
+          }),
           viewerProtocolPolicy:
             cloudFront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          // configure to send CORS headers to S3: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/header-caching.html#header-caching-web-cors
+          originRequestPolicy: cloudFront.OriginRequestPolicy.CORS_S3_ORIGIN,
         },
-        // NOTE: Commented out till we add a domain
-        // certificate: certificate,
         comment: `${this.config.stageName}-acc-can-calendar - CloudFront Distribution`,
       }
     );
 
-    // Setup Bucket Deployment to automatically deploy new assets and invalidate cache
     new s3deploy.BucketDeployment(
       this,
       `${ACCOLITE_RESOURCE_NAME}-bucket-deployment-${this.config.stageName}`,
       {
         sources: [s3deploy.Source.asset("../dist")],
-        destinationBucket: s3Site,
-        distribution: distribution,
+        destinationBucket: calendarAppBucket,
+        distribution: calendarAppCDN,
         distributionPaths: ["/*"],
       }
     );
 
-    // Final CloudFront URL
     new cdk.CfnOutput(this, "CloudFront URL", {
-      value: distribution.distributionDomainName,
+      value: calendarAppCDN.distributionDomainName,
     });
   }
 }

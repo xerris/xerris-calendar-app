@@ -16,10 +16,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: "src/xerris-calendar-app.ts",
+      preserveEntrySignatures: "exports-only",
       output: {
-        format: "systemjs",
+        format: "system",
         entryFileNames: "[name].js",
       },
+      external: ["react", "react-dom", "single-spa"],
     },
   },
 });

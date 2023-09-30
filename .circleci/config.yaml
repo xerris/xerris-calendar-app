@@ -1,0 +1,160 @@
+version: 2.1
+executors:
+  default:
+    docker:
+      - image: cimg/node:18.18.0
+
+anchors:
+  configure-aws-access: &configure-aws-access
+    run:
+      name: Configure AWS access
+      command: |
+        mkdir -p ~/.aws
+        file=~/.aws/credentials
+        echo "[default]" > $file
+        echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> $file
+        echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> $file
+
+  install-bundle-dependencies: &install-bundle-dependencies
+    run:
+      name: Install Infrastructure Depedencies
+      command: |
+        npm install
+
+  unit-tests: &unit-tests
+    run:
+      name: Run Unit Tests
+      command: |
+        npm run test
+
+  build-bundle: &build-bundle
+    run:
+      name: Build Bundle
+      command: |
+        npm run build
+        cp -r dist ~/workspace
+
+  install-infrastructure-dependencies: &install-infrastructure-dependencies
+    run:
+      name: Install Infrastructure Depedencies
+      command: |
+        cd infrastructure
+        npm install
+
+  cache-dependencies: &cache-dependencies
+    save_cache:
+      key: dependency-cache-{{ checksum "package.json" }}
+      paths:
+        - ./node_modules
+        - ./infrastructure/node_modules
+
+  load-dependency-cache: &load-dependency-cache
+    restore_cache:
+      key: dependency-cache-{{ checksum "package.json" }}
+
+jobs:
+  test:
+    executor: default
+    steps:
+      - checkout
+      - *load-dependency-cache
+      - *install-bundle-dependencies
+      - *cache-dependencies
+      - *unit-tests
+
+  lint:
+    executor: default
+    steps:
+      - checkout
+      - *load-dependency-cache
+      - *install-bundle-dependencies
+      - run: npm run lint
+
+  ## TODO ADD LINT STEP
+  build-bundle:
+    executor: default
+    steps:
+      - checkout
+      - *load-dependency-cache
+      - *install-bundle-dependencies
+      - run: mkdir ~/workspace
+      - *build-bundle
+      - persist_to_workspace:
+          root: ~/
+          paths: workspace
+
+  build-infrastructure:
+    executor: default
+    parameters:
+      environment:
+        type: string
+    steps:
+      - checkout
+      - *load-dependency-cache
+      - *install-infrastructure-dependencies
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Configure bundle
+          command: |
+            cp -r ~/workspace/dist ~/project/dist
+      - run:
+          name: Build Infrastructure
+          command: |
+            cd infrastructure
+            ENV=<< parameters.environment >> npm run build
+            cp -r bin ~/workspace/bin
+      - run:
+          name: Synth CloudFormation
+          command: |
+            cd infrastructure
+            ENV=<< parameters.environment >> npm run synth
+      - persist_to_workspace:
+          root: ~/
+          paths: workspace
+
+  deploy-to-aws:
+    executor: default
+    parameters:
+      environment:
+        type: string
+    steps:
+      - checkout
+      - *install-infrastructure-dependencies
+      - *configure-aws-access
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Deploy to AWS
+          command: |
+            cp -r ~/workspace/bin infrastructure/bin
+            cp -r ~/workspace/dist dist
+            cd infrastructure
+            ENV=<< parameters.environment >> npm run deploy
+
+workflows:
+  ci-dev:
+    jobs:
+      - test
+      - lint
+      - build-bundle:
+          requires:
+            - test
+      - build-infrastructure:
+          environment: production
+          requires:
+            - test
+            - build-bundle
+          filters:
+            branches:
+              only:
+                - master
+      - deploy-to-aws:
+          environment: production
+          requires:
+            - build-bundle
+            - build-infrastructure
+          filters:
+            branches:
+              only:
+                - master
