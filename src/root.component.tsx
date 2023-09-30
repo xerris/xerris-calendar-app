@@ -136,6 +136,7 @@ export default function Root(props) {
         paddingRight: 5,
       }}
     >
+      <div>Calendar App</div>
       <p>{props.pageLabel}</p>
       {/* depends on auth */}
       {/* {!isLoadingEvents && (
