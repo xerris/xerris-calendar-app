@@ -70,7 +70,6 @@ jobs:
       - *install-bundle-dependencies
       - run: npm run lint
 
-  ## TODO ADD LINT STEP
   build-bundle:
     executor: default
     steps:
