@@ -1,7 +1,12 @@
 {
-  "extends": [
-    "ts-react-important-stuff",
-    "plugin:prettier/recommended"
-  ],
-  "parser": "@babel/eslint-parser"
+  "extends": ["plugin:prettier/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 2018,
+    "sourceType": "module",
+    "project": ["./tsconfig.json", "./infrastructure/tsconfig.json"]
+  }
 }
