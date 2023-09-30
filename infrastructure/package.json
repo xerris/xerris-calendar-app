@@ -6,9 +6,9 @@
   },
   "scripts": {
     "build": "rimraf bin && tsc",
-    "deploy": "cdk deploy -v --force -c env=${ENV}",
+    "deploy": "cdk deploy -v --force -c env=${ENV} --require-approval never",
     "destroy": "cdk destroy -v --force -c env=${ENV}",
-    "synth": "cdk synth -c env=production"
+    "synth": "cdk synth -c env=${ENV}"
   },
   "devDependencies": {
     "@types/jest": "^27.5.2",
