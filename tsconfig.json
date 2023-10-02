@@ -2,9 +2,10 @@
   "extends": "ts-config-single-spa",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "declarationDir": "dist"
+    "declarationDir": "dist",
+    "esModuleInterop": true
   },
-  "files": ["src/xerris-calendar-app.tsx"],
-  "include": ["src/**/*"],
-  "exclude": ["src/**/*.test*"]
+  "files": ["src/xerris-calendar-app.ts"],
+  "include": ["src/**/*", "./vite.config.ts"],
+  "exclude": ["node_modules"]
 }

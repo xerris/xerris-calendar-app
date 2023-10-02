@@ -1,141 +1,158 @@
+version: 2.1
+executors:
+  default:
+    docker:
+      - image: cimg/node:18.18.0
+
 anchors:
-  configure-build-environment: &configure-build-environment
+  configure-aws-access: &configure-aws-access
     run:
-      name: Configure
+      name: Configure AWS access
       command: |
-        yarn install
-  configure-run-build: &configure-run-build
+        mkdir -p ~/.aws
+        file=~/.aws/credentials
+        echo "[default]" > $file
+        echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> $file
+        echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> $file
+
+  install-bundle-dependencies: &install-bundle-dependencies
     run:
-      name: Configure
+      name: Install Infrastructure Depedencies
       command: |
-        yarn build
-  run-tests: &run-tests
+        npm install
+
+  unit-tests: &unit-tests
     run:
-      name: Test
+      name: Run Unit Tests
       command: |
-        yarn test
+        npm run test
+
+  build-bundle: &build-bundle
+    run:
+      name: Build Bundle
+      command: |
+        npm run build
+        cp -r dist ~/workspace
+
+  install-infrastructure-dependencies: &install-infrastructure-dependencies
+    run:
+      name: Install Infrastructure Depedencies
+      command: |
+        cd infrastructure
+        npm install
+
   cache-dependencies: &cache-dependencies
     save_cache:
       key: dependency-cache-{{ checksum "package.json" }}
       paths:
         - ./node_modules
+        - ./infrastructure/node_modules
+
   load-dependency-cache: &load-dependency-cache
     restore_cache:
       key: dependency-cache-{{ checksum "package.json" }}
-  run-deploy: &run-deploy
-    run:
-      name: deploy
-      command: |
-        ./node_modules/.bin/firebase use default
-        ./node_modules/.bin/firebase deploy --only hosting --token=$FIREBASE_TOKEN --non-interactive
-  run-prod-deploy: &run-prod-deploy
-    run:
-      name: prod-deploy
-      command: |
-        ./node_modules/.bin/firebase use production
-        ./node_modules/.bin/firebase deploy --only hosting --token=$FIREBASE_TOKEN --non-interactive
-  increment-version: &increment-version
-    run:
-      name: increment version number
-      command: |
-        yarn config set version-git-message "[skip ci] bumping package version to v%s"
-        git config --global user.email EMAIL
-        git config --global user.name "copelandbrandon"
-        yarn version --patch
-        git push origin master
 
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
-version: 2.1
-orbs:
-  jira: circleci/jira@1.3.1
-
-executors:
-  default:
-    docker:
-      - image: cimg/node:17.3
-    resource_class: small
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
   test:
     executor: default
     steps:
       - checkout
       - *load-dependency-cache
-      - *configure-build-environment
+      - *install-bundle-dependencies
       - *cache-dependencies
-      - *run-tests
-      - jira/notify
-  build:
-    executor: default
-    steps:
-      - checkout
-      - *load-dependency-cache
-      - *configure-build-environment
-      - *cache-dependencies
-      - *configure-run-build
-      - jira/notify
-  build-deploy:
-    executor: default
-    steps:
-      - checkout
-      - *load-dependency-cache
-      - *configure-build-environment
-      - *cache-dependencies
-      - *configure-run-build
-      - *run-deploy
-      - jira/notify
-  prod-deploy:
-    executor: default
-    steps:
-      - checkout
-      - *increment-version
-      - *load-dependency-cache
-      - *configure-build-environment
-      - *cache-dependencies
-      - *configure-run-build
-      - *run-prod-deploy
-      - jira/notify
+      - *unit-tests
 
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+  lint:
+    executor: default
+    steps:
+      - checkout
+      - *load-dependency-cache
+      - *install-bundle-dependencies
+      - run: npm run lint
+
+  build-bundle:
+    executor: default
+    steps:
+      - checkout
+      - *load-dependency-cache
+      - *install-bundle-dependencies
+      - run: mkdir ~/workspace
+      - *build-bundle
+      - persist_to_workspace:
+          root: ~/
+          paths: workspace
+
+  build-infrastructure:
+    executor: default
+    parameters:
+      environment:
+        type: string
+    steps:
+      - checkout
+      - *load-dependency-cache
+      - *install-infrastructure-dependencies
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Configure bundle
+          command: |
+            cp -r ~/workspace/dist ~/project/dist
+      - run:
+          name: Build Infrastructure
+          command: |
+            cd infrastructure
+            ENV=<< parameters.environment >> npm run build
+            cp -r bin ~/workspace/bin
+      - run:
+          name: Synth CloudFormation
+          command: |
+            cd infrastructure
+            ENV=<< parameters.environment >> npm run synth
+      - persist_to_workspace:
+          root: ~/
+          paths: workspace
+
+  deploy-to-aws:
+    executor: default
+    parameters:
+      environment:
+        type: string
+    steps:
+      - checkout
+      - *install-infrastructure-dependencies
+      - *configure-aws-access
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Deploy to AWS
+          command: |
+            cp -r ~/workspace/bin infrastructure/bin
+            cp -r ~/workspace/dist dist
+            cd infrastructure
+            ENV=<< parameters.environment >> npm run deploy
+
 workflows:
-  version: 2
   ci-dev:
     jobs:
-      - test:
-          context: xerris-dev
-          filters:
-            branches:
-              ignore:
-                - master
-      - build:
-          context: xerris-dev
+      - test
+      - lint
+      - build-bundle:
           requires:
             - test
-          filters:
-            branches:
-              ignore:
-                - master
-      - build-deploy:
-          context: xerris-dev
+      - build-infrastructure:
+          environment: production
+          requires:
+            - test
+            - build-bundle
           filters:
             branches:
               only:
                 - master
-      - elevate-deploy:
-          type: approval
+      - deploy-to-aws:
+          environment: production
           requires:
-            - build-deploy
-          filters:
-            branches:
-              only:
-                - master
-      - prod-deploy:
-          context: xerris-dev
-          requires:
-            - elevate-deploy
+            - build-bundle
+            - build-infrastructure
           filters:
             branches:
               only:

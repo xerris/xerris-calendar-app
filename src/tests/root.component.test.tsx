@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import Root from "./root.component";
+import { expect } from "vitest";
+import Root from "../root.component";
+import React from "react";
 
 describe("Root component", () => {
   it("should be in the document", () => {

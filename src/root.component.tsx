@@ -1,4 +1,4 @@
-import { useAuth, useGet } from "@xerris/utility-app";
+// import { useAuth, useGet } from "@xerris/utility-app";
 import { useState, useEffect } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -6,8 +6,7 @@ import "./calendar.css";
 import moment from "moment";
 
 export default function Root(props) {
-  const authToken = useAuth();
-
+  // const authToken = useAuth();
   const [calendarDate, setCalendarDate] = useState(new Date());
 
   const getApiStartDate = (calDate = null) => {
@@ -55,17 +54,17 @@ export default function Root(props) {
       }
     };
 
-    const options = {
-      method: "GET",
-      params: {
-        action: "view",
-        type: "84",
-      },
-      headers: {
-        Accept: "application/json",
-        Authorization: `Basic ${process.env.REACT_APP_BAMBOO_API_KEY}`,
-      },
-    };
+    // const options = {
+    //   method: "GET",
+    //   params: {
+    //     action: "view",
+    //     type: "84",
+    //   },
+    //   headers: {
+    //     Accept: "application/json",
+    //     Authorization: `Basic ${process.env.REACT_APP_BAMBOO_API_KEY}`,
+    //   },
+    // };
 
     // will need to set up a Firebase cloud function to make this call as CORS issues are blocking us and bamboo support has not been helpful in requesting CORS support
     // You will also need to request access to generate an API key as well as access to view all approved vacation and contractor vacation
@@ -121,10 +120,10 @@ export default function Root(props) {
     }
   }, [isLoadingEvents]);
 
-  if (!authToken) {
-    window.location.replace("/");
-    return;
-  }
+  // if (!authToken) {
+  //   window.location.replace("/");
+  //   return;
+  // }
 
   const localizer = momentLocalizer(moment);
 
@@ -137,8 +136,10 @@ export default function Root(props) {
         paddingRight: 5,
       }}
     >
+      <div>Calendar App</div>
       <p>{props.pageLabel}</p>
-      {!isLoadingEvents && (
+      {/* depends on auth */}
+      {/* {!isLoadingEvents && (
         <Calendar
           localizer={localizer}
           events={timeOff}
@@ -150,7 +151,18 @@ export default function Root(props) {
           onView={handleViewChange}
           view={view}
         />
-      )}
+      )} */}
+      <Calendar
+        localizer={localizer}
+        events={timeOff}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: "98vh" }}
+        onNavigate={handleDateChange}
+        date={calendarDate}
+        onView={handleViewChange}
+        view={view}
+      />
     </div>
   );
 }
